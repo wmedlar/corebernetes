@@ -52,11 +52,11 @@ hello core
 
 - install the config transpiler on the host machine
 
-[`ct`] is CoreOS' "Config Transpiler", used to convert a human-readable config into one readable by CoreOS' low-level, first-boot configuration tool [ignition]. Follow [CoreOS' steps for installing a `ct` binary][ct-installation-binary], or just install from brew (`brew install coreos-ct`).
+[`ct`][ct] is CoreOS' "Config Transpiler", used to convert a human-readable config into one readable by CoreOS' low-level, first-boot configuration tool [ignition]. Follow [CoreOS' steps for installing a `ct` binary][ct-installation-binary], or just install from brew (`brew install coreos-ct`).
 
 - configure a config (for transpiling with `ct`)
 
-I've included a copy of my own [containerlinux.yaml][/containerlinux.yaml], although this will probably take quite a bit of tweaking to work with your system. Alternatively you can use the bare-minimum config below that simply sets up a user `core` that you can log in as with your default ssh key.
+I've included a copy of my own [containerlinux.yaml](/containerlinux.yaml), although this will probably take quite a bit of tweaking to work with your system. Alternatively you can use the bare-minimum config below that simply sets up a user `core` that you can log in as with your default ssh key.
 
 Run on the host machine:
 
