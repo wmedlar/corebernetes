@@ -1,0 +1,16 @@
+version: "2"
+services:
+  corebernetes:
+    image: corebernetes
+    build: .
+    environment:
+      # output logs immediately rather than waiting for python to flush the stdout/stderr buffers
+      # the value of this variable doesn't matter as long as it's non-empty
+      # https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUNBUFFERED
+      PYTHONUNBUFFERED: ✓
+      # disable deprecation warnings from the cryptography library
+      # https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNINGS
+      PYTHONWARNINGS: ignore
+    volumes:
+    - ./:/etc/corebernetes:ro
+    - ~/.ssh:/root/.ssh:ro

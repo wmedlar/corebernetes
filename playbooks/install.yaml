@@ -1,0 +1,39 @@
+- hosts: corebernetes
+  gather_facts: false
+  vars:
+    ct_version: v0.9.0
+  tasks:
+  # install a python "binary" to allow ansible's modules to work, it's actually just a docker wrapper
+  - name: setup python interpreter
+    block:
+    - raw: mkdir -p {{ ansible_python_interpreter | dirname | quote }}
+    - raw: printf '#!/bin/sh -e\ndocker run -itu "$UID" -v "$PWD:$PWD" -w "$PWD" --rm python:alpine python "$@"\n' > {{ ansible_python_interpreter | quote }}
+    - raw: chmod +x {{ ansible_python_interpreter | quote }}
+
+  - name: install ct
+    get_url:
+      url: "https://github.com/coreos/container-linux-config-transpiler/releases/download/{{ ct_version }}/ct-{{ ct_version }}-x86_64-unknown-linux-gnu"
+      dest: ./ct
+      mode: 0555
+
+  - name: upload ct config
+    template:
+      src: templates/containerlinux.yaml.j2
+      dest: containerlinux.yaml
+      validate: ./ct -in-file %s # ensure our configuration is well-formed
+
+  - name: render ignition config
+    shell: ./ct -in-file containerlinux.yaml > ignition.json
+    # don't specify creates, otherwise ansible won't run this step at all if ignition.json exists
+    # meaning ansible won't pick up changes to containerlinux.yaml
+    # args:
+    #   creates: ignition.json
+
+  # we choose raw instead of shell or command as these steps must be run outside the docker container
+  - name: install coreos
+    become: true
+    raw: coreos-install -d /dev/sda -i ignition.json -C beta
+
+  - name: reboot to coreos
+    become: true
+    raw: reboot
