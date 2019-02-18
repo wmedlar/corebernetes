@@ -2,7 +2,7 @@
 
 ## Installation Tooling
 
-CoreOS is configured and installed with [Ansible][https://github.com/ansible/ansible], a configuration management tool. Ansible operates on an ["inventory"](/inventory/hosts.ini), with declarative configuration files [for each host](/inventory/host_vars/) or [logical groupings of hosts](/inventory/group_vars/) (for common config settings). [Configuration for ansible itself](/ansible.cfg) is also stored declaratively. Hosts are configured by ["playbooks"](/playbooks/), lists of idempotent tasks to apply to specified hosts or groups to achieve a desired state. Overall it looks like a fancy `make` over SSH.
+CoreOS is configured and installed with [Ansible](https://github.com/ansible/ansible), a configuration management tool. Ansible operates on an ["inventory"](/inventory/hosts.ini), with declarative configuration files [for each host](/inventory/host_vars/) or [logical groupings of hosts](/inventory/group_vars/) (for common config settings). [Configuration for ansible itself](/ansible.cfg) is also stored declaratively. Hosts are configured by ["playbooks"](/playbooks/), lists of idempotent tasks to apply to specified hosts or groups to achieve a desired state. Overall it looks like a fancy `make` over SSH.
 
 Ansible commands are run in containers to avoid additional configuration of the host machine. Unfortunately ansible does not publish official images, so we [build our own](/Dockerfile) from alpine. `ansible` and `ansible-playbook` can be [invoked through docker-compose](/docker-compose.yaml) (e.g., `docker-compose run ansible-playbook ...`).
 
