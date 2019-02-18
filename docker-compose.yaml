@@ -1,16 +1,29 @@
 version: "2"
+
+# store common configuration separately and use yaml anchors to copy it into runtime services
+# this crafty hack allows us to save a few keystrokes and run "docker-compose run ansible ..."
+# instead of "docker-compose run some-service ansible ..."
+# https://docs.docker.com/compose/compose-file/#extension-fields
+x-common: &common
+  image: corebernetes
+  build: .
+  environment:
+    # output logs immediately rather than waiting for python to flush the stdout/stderr buffers
+    # the value of this variable doesn't matter as long as it's non-empty
+    # https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUNBUFFERED
+    PYTHONUNBUFFERED: ✓
+    # disable deprecation warnings from the cryptography library
+    # https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNINGS
+    PYTHONWARNINGS: ignore
+  volumes:
+  - ./:/etc/corebernetes:ro
+  - ~/.ssh:/root/.ssh:ro
+
 services:
-  corebernetes:
-    image: corebernetes
-    build: .
-    environment:
-      # output logs immediately rather than waiting for python to flush the stdout/stderr buffers
-      # the value of this variable doesn't matter as long as it's non-empty
-      # https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUNBUFFERED
-      PYTHONUNBUFFERED: ✓
-      # disable deprecation warnings from the cryptography library
-      # https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNINGS
-      PYTHONWARNINGS: ignore
-    volumes:
-    - ./:/etc/corebernetes:ro
-    - ~/.ssh:/root/.ssh:ro
+  ansible:
+    <<: *common
+    entrypoint: ["ansible"]
+
+  ansible-playbook:
+    <<: *common
+    entrypoint: ["ansible-playbook"]
