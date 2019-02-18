@@ -1,0 +1,15 @@
+version: 2
+
+jobs:
+  lint:markdown:
+    docker:
+    - image: node:alpine
+    steps:
+    - checkout
+    - run: npm run lint:markdown
+
+workflows:
+  version: 2
+  test:
+    jobs:
+    - lint:markdown
