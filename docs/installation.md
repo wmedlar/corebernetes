@@ -52,7 +52,7 @@ hello core
 
 - install the config transpiler on the host machine
 
-[`ct`][ct] is CoreOS' "Config Transpiler", used to convert a human-readable config into one readable by CoreOS' low-level, first-boot configuration tool [ignition]. Follow [CoreOS' steps for installing a `ct` binary][ct-installation-binary], or just install from brew (`brew install coreos-ct`).
+[`ct`][ct] is CoreOS' "Config Transpiler", used to convert a human-readable config into one readable by CoreOS' low-level, first-boot configuration tool [ignition][]. Follow [CoreOS' steps for installing a `ct` binary][ct-installation-binary], or just install from brew (`brew install coreos-ct`).
 
 - configure a config (for transpiling with `ct`)
 
@@ -91,7 +91,7 @@ With an ignition config in hand we can finally install CoreOS to disk, using the
 A breakdown of important options:
 - `-d /dev/sdX` disk (not partition) to install CoreOS to, confirm this with `lsblk`
 - `-i ignition.json` path to the ignition config we rendered in the last step
-- `-C beta` (optional) specify a [release channel][coreos-releases], one of [stable, beta, alpha], can be changed post-install
+- `-C beta` (optional) specify a [release channel][coreos-releases], one of: stable, beta, alpha; can be changed post-install
 
 Run on the target machine:
 
@@ -148,7 +148,7 @@ Host $MACHINE_IP
 EOF
 ```
 
-That's all! If you ran into any trouble along the way let me know in [an issue], but otherwise I hope you enjoy your new CoreOS box.
+That's all! If you ran into any trouble along the way let me know in [an issue][github-issue], but otherwise I hope you enjoy your new CoreOS box.
 
 Check back in a few weeks to see how far I've come getting a Kubernetes cluster running!
 
