@@ -29,10 +29,6 @@
     # args:
     #   creates: ignition.json
 
-  - name: exit before install
-    meta: end_play
-    when: debug is defined and debug
-
   # we choose raw instead of shell or command as these steps must be run outside the docker container
   - name: install coreos
     become: true
