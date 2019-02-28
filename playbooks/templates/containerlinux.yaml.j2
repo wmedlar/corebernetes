@@ -1,3 +1,26 @@
+etcd:
+  name: "{{ inventory_hostname }}"
+  version: 3.3.12
+
+  listen_client_urls: http://0.0.0.0:2379
+  listen_peer_urls: http://0.0.0.0:2380
+  listen_metrics_urls: http://0.0.0.0:2381
+
+  advertise_client_urls: "http://{{ ansible_host }}:2379"
+  initial_advertise_peer_urls: "http://{{ ansible_host }}:2380"
+  initial_cluster: "{{ '%s=http://%s:2380' | format(inventory_hostname, ansible_host) }}"
+  strict_reconfig_check: true
+
+  {# client_cert_auth: true
+  trusted_ca_file: /etc/ssl/certs/etcd/ca.crt
+  cert_file: /etc/ssl/certs/etcd/tls.crt
+  key_file: /etc/ssl/certs/etcd/tls.key
+
+  peer_client_cert_auth: true
+  peer_trusted_ca_file: /etc/ssl/certs/etcd/ca.crt
+  peer_cert_file: /etc/ssl/certs/etcd/peer.crt
+  peer_key_file: /etc/ssl/certs/etcd/peer.key #}
+
 passwd:
   users:
   - name: core
@@ -46,7 +69,7 @@ storage:
   - filesystem: root
     path: /etc/hostname
     contents:
-      inline: dvalin
+      inline: "{{ inventory_hostname }}"
     mode: 0644
 
 systemd:
