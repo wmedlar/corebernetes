@@ -1,0 +1,6 @@
+- hosts: corebernetes
+  gather_facts: false
+  tasks:
+  - name: render container linux template
+    debug:
+      msg: "{{ lookup('template', 'containerlinux.yaml.j2') }}"
