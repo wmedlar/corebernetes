@@ -1,0 +1,82 @@
+- hosts: localhost
+  gather_facts: false
+  tasks:
+  - name: create pki directories
+    file:
+      path: files/pki/{{ item }}
+      state: directory
+    loop: &authorities
+    - tls
+
+  - name: create signing keys
+    openssl_privatekey:
+      path: files/pki/{{ item }}/ca.key
+    loop: *authorities
+
+  - name: create signing requests
+    openssl_csr:
+      path: files/pki/{{ item }}/ca.csr
+      privatekey_path: files/pki/{{ item }}/ca.key
+      organization_name: corebernetes
+      common_name: "{{ item }}:authority"
+      basic_constraints: CA:true
+    loop: *authorities
+
+  - name: sign certificate authorities
+    openssl_certificate:
+      provider: selfsigned
+      path: files/pki/{{ item }}/ca.crt
+      csr_path: files/pki/{{ item }}/ca.csr
+      privatekey_path: files/pki/{{ item }}/ca.key
+    loop: *authorities
+
+- hosts: corebernetes
+  gather_facts: false
+  tasks:
+  - name: create pki directories
+    file:
+      path: embed/pki/{{ item }}
+      state: directory
+    loop: &components
+    - etcd
+
+  - name: create tls private keys
+    openssl_privatekey:
+      path: embed/pki/{{ item }}/tls.key
+    loop: *components
+
+  - name: create tls signing requests
+    openssl_csr:
+      path: embed/pki/{{ item }}/tls.csr
+      privatekey_path: embed/pki/{{ item }}/tls.key
+      subject_alt_name: DNS:{{ inventory_hostname }},DNS:localhost,IP:{{ ansible_host }},IP:127.0.0.1
+    loop: *components
+
+  - name: create local temporary directory for signing requests
+    local_action:
+      module: tempfile
+      state: directory
+    register: tempdir
+    run_once: true
+
+  - name: copy tls signing requests
+    fetch:
+      src: embed/pki/{{ item }}/tls.csr
+      dest: "{{ tempdir.path }}"
+    loop: *components
+
+  - name: sign tls certificates
+    local_action:
+      module: openssl_certificate
+      provider: ownca
+      path: "{{ tempdir.path }}/{{ inventory_hostname }}/embed/pki/{{ item }}/tls.crt"
+      csr_path: "{{ tempdir.path }}/{{ inventory_hostname }}/embed/pki/{{ item }}/tls.csr"
+      ownca_path: files/pki/{{ item }}/ca.crt
+      ownca_privatekey_path: files/pki/{{ item }}/ca.key
+    loop: *components
+
+  - name: copy tls certificates
+    copy:
+      src: "{{ tempdir.path }}/{{ inventory_hostname }}/embed/pki/{{ item }}/tls.crt"
+      dest: embed/pki/{{ item }}/tls.crt
+    loop: *components
