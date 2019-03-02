@@ -1,2 +1,1 @@
-ansible_python_interpreter: bin/python
 ansible_ssh_user: core

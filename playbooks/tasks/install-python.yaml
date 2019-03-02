@@ -1,0 +1,53 @@
+# coreos' toolbox allows us to inject our own tooling via a container filesystem and systemd-nspawn
+# we configure toolbox to run a python container, then configure ansible to use this for its modules
+# https://github.com/coreos/toolbox
+
+- name: create toolboxrc
+  # ansible prepends spaces in front of multiline raw commands, breaking heredocs
+  # one workaround for this is to assign the command to a variable as we've done here
+  # https://github.com/ansible/ansible/issues/12034#issuecomment-453723192
+  raw: "{{ cmd }}"
+  vars:
+    # escaping or quoting the "limit string" in a heredoc disables parameter substitution
+    # http://tldp.org/LDP/abs/html/here-docs.html#EX71C
+    cmd: |
+      cat > ~/.toolboxrc << \EOF
+      TOOLBOX_DOCKER_IMAGE=python
+      TOOLBOX_DOCKER_TAG=3
+      TOOLBOX_BIND="$TOOLBOX_BIND --bind=/etc/passwd:/etc/passwd --bind=/home:/home"
+      TOOLBOX_ENV=--chdir="/media/root/$PWD"
+      TOOLBOX_USER="$USER"
+
+      # if this file was invoked under a name other than "toolbox" we want to use that name as the first argument
+      # this allows toolbox to be used with ansible's ansible_xxx_interpreter variables
+      # https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#ansible-python-interpreter
+      if [ "$(basename $0)" != toolbox ]; then
+          # less recent versions (< v240) of systemd-nspawn use the host's $PATH instead of the container's to invoke
+          # the given command, and since the python docker image ships with several binaries across several versions in
+          # several places we're better off just being specific about which we want
+          # https://github.com/systemd/systemd/issues/10377
+          # https://github.com/docker-library/python/issues/345
+          set -- "/usr/local/bin/$(basename "$0")" "$@"
+      fi
+      EOF
+
+# the first run of toolbox will pull and unpack the docker image to the local filesystem
+# this can take a while so we'll pull it eagerly to avoid confusion or timeouts in subsequent steps
+- name: verify toolbox container image
+  raw: toolbox echo hello world
+
+- name: create /opt/bin
+  become: true
+  raw: mkdir -p /opt/bin
+
+- name: link binaries to toolbox
+  become: true
+  raw: ln -fs /usr/bin/toolbox "/opt/bin/{{ item }}"
+  loop: &binaries
+  - python
+  - pip
+
+- name: set binary paths
+  set_fact:
+    "ansible_{{ item }}_interpreter": "/opt/bin/{{ item }}"
+  loop: *binaries
