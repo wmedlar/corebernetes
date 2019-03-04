@@ -47,18 +47,10 @@
   become: true
   raw: ln -fs "/var/lib/toolbox/{{ ansible_ssh_user }}-python-3" /var/lib/toolbox/root-python-3
 
-- name: create /opt/bin
+- name: create binary directory
   become: true
-  raw: mkdir -p /opt/bin
+  raw: mkdir -p "{{ ansible_python_interpreter | dirname }}"
 
-- name: link binaries to toolbox
+- name: link python to toolbox
   become: true
-  raw: ln -fs /usr/bin/toolbox "/opt/bin/{{ item }}"
-  loop: &binaries
-  - python
-  - pip
-
-- name: set binary paths
-  set_fact:
-    "ansible_{{ item }}_interpreter": "/opt/bin/{{ item }}"
-  loop: *binaries
+  raw: ln -fs /usr/bin/toolbox "{{ ansible_python_interpreter }}"
