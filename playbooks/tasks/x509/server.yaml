@@ -1,0 +1,68 @@
+# requests a server certificate from a signing authority and generates its matching private key
+# no key material is exchanged between the two boxes, only a public CSR and public certificate
+# run this on a remote server
+
+- name: check required variables
+  assert:
+    that:
+    - purpose is defined
+    - authority_cert is defined
+    - authority_key is defined
+
+- name: set default variables
+  set_fact:
+    certificate_directory: "{{ certificate_directory | default('/etc/ssl/certs') }}"
+    private_key_directory: "{{ private_key_directory | default('/etc/ssl/private') }}"
+
+- name: create output directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+  - "{{ certificate_directory }}"
+  - "{{ private_key_directory }}"
+
+- name: create private key
+  openssl_privatekey:
+    path: "{{ private_key_directory }}/{{ purpose }}.key"
+
+- name: create signing request
+  openssl_csr:
+    extended_key_usage:
+    - serverAuth
+    extended_key_usage_critical: true
+    subject_alt_name:
+    - DNS:localhost
+    - DNS:{{ inventory_hostname }}
+    - IP:127.0.0.1
+    - IP:{{ ansible_host }}
+    subject_alt_name_critical: true
+    path: "{{ certificate_directory }}/{{ purpose }}.csr"
+    privatekey_path: "{{ private_key_directory }}/{{ purpose }}.key"
+
+- name: create local temporary directory for signing request
+  run_once: true # reuse this directory throughout the play
+  local_action:
+    module: tempfile
+    state: directory
+  register: tempdir
+
+- name: copy signing request from host
+  fetch:
+    src: "{{ certificate_directory }}/{{ purpose }}.csr"
+    dest: "{{ tempdir.path }}"
+
+- name: sign request
+  local_action:
+    module: openssl_certificate
+    provider: ownca
+    path: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ purpose }}.crt"
+    csr_path: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ purpose }}.csr"
+    ownca_path: "{{ authority_cert }}"
+    ownca_privatekey_path: "{{ authority_key }}"
+
+- name: copy certificate to host
+  copy:
+    src: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ purpose }}.crt"
+    dest: "{{ certificate_directory }}/{{ purpose }}.crt"

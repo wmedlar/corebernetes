@@ -1,2 +1,5 @@
 ansible_ssh_user: core
 ansible_python_interpreter: /opt/bin/python
+
+certificate_directory: embed/certs
+private_key_directory: embed/keys
