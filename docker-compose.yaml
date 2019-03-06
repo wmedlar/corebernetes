@@ -16,7 +16,7 @@ x-common: &common
     # https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNINGS
     PYTHONWARNINGS: ignore
   volumes:
-  - ./:/etc/corebernetes:ro
+  - ./:/etc/corebernetes
   - ~/.ssh:/root/.ssh:ro
 
 services:
