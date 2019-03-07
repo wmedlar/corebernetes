@@ -14,6 +14,11 @@
     certificate_directory: "{{ certificate_directory | default('/etc/ssl/certs') }}"
     private_key_directory: "{{ private_key_directory | default('/etc/ssl/private') }}"
 
+- name: install python dependencies
+  pip:
+    name: pyopenssl
+    extra_args: --user
+
 - name: create output directories
   file:
     path: "{{ item }}"
