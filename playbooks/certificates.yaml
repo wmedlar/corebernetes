@@ -8,7 +8,7 @@
     local_private_key_directory: "{{ hostvars['localhost']['private_key_directory'] }}"
   tasks:
   - name: provision http certificates
-    tags: ["http"]
+    tags: ["http", "https"]
     block:
     - set_fact:
         authority_cert: "{{ local_certificate_directory }}/http.crt"
