@@ -20,13 +20,13 @@ To minimize the damage an exposed private key can do we're leveraging multiple c
 
 Private keys never leave the boxes they are generated on, instead the only files that change hands are the [certificate signing requests](https://www.sslshopper.com/what-is-a-csr-certificate-signing-request.html) and the certificates generated from them, both public data.
 
-| Ansible Host                                                                 	|      	| CoreOS Host                                         	|
-|------------------------------------------------------------------------------	|------	|-----------------------------------------------------	|
-| generates RSA key (`ca.key`)                                                 	|      	|                                                     	|
-| generates CSR (`ca.csr`) with constraint `CA:true`, signed by `ca.key`       	|      	|                                                     	|
-| re-signs `ca.csr` with `ca.key` to generate root certificate (`ca.crt`)      	| ---> 	| stores `ca.crt`                                     	|
-|                                                                              	|      	| generates RSA key (`coreos.key`)                    	|
-| stores `coreos.csr` in temporary directory                                   	| <--- 	| generates CSR (`coreos.csr`) signed by `coreos.key` 	|
-| signs `coreos.csr` with `ca.key` to generate leaf certificate (`coreos.crt`) 	| ---> 	| stores `coreos.crt`                                 	|
+| Ansible Host                                                                 |   | CoreOS Host                                         |
+|------------------------------------------------------------------------------|---|-----------------------------------------------------|
+| generates RSA key (`ca.key`)                                                 |   |                                                     |
+| generates CSR (`ca.csr`) with constraint `CA:true`, signed by `ca.key`       |   |                                                     |
+| re-signs `ca.csr` with `ca.key` to generate root certificate (`ca.crt`)      | → | stores `ca.crt`                                     |
+|                                                                              |   | generates RSA key (`coreos.key`)                    |
+| stores `coreos.csr` in temporary directory                                   | ← | generates CSR (`coreos.csr`) signed by `coreos.key` |
+| signs `coreos.csr` with `ca.key` to generate leaf certificate (`coreos.crt`) | → | stores `coreos.crt`                                 |
 
 The above example is orchestrated by [several ansible modules](/playbooks/tasks/x509/), see the task implementations for more details.
