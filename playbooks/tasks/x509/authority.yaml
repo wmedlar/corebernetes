@@ -1,23 +1,8 @@
 # generates a self-signed certificate authority and its matching private key
 # run this on localhost
 
-- name: check required variables
-  assert:
-    that: purpose is defined
-
-- name: set default variables
-  set_fact:
-    certificate_directory: "{{ certificate_directory | default('/etc/ssl/certs') }}"
-    private_key_directory: "{{ private_key_directory | default('/etc/ssl/private') }}"
-
-- name: create output directories
-  file:
-    path: "{{ item }}"
-    state: directory
-    mode: 0755
-  loop:
-  - "{{ certificate_directory }}"
-  - "{{ private_key_directory }}"
+- name: include boilerplate tasks
+  include: boilerplate.yaml
 
 - name: create signing key
   openssl_privatekey:
@@ -25,16 +10,18 @@
 
 - name: create self-signing request
   openssl_csr:
+    path: "{{ certificate_directory }}/{{ purpose }}.csr"
+    privatekey_path: "{{ private_key_directory }}/{{ purpose }}.key"
     organization_name: corebernetes
     common_name: "{{ purpose }}:authority"
     basic_constraints: CA:true
     basic_constraints_critical: true
-    path: "{{ certificate_directory }}/{{ purpose }}.csr"
-    privatekey_path: "{{ private_key_directory }}/{{ purpose }}.key"
+    key_usage: keyCertSign, cRLSign
+    key_usage_critical: true
 
 - name: self-sign certificate authority
   openssl_certificate:
-    provider: selfsigned
     path: "{{ certificate_directory }}/{{ purpose }}.crt"
     csr_path: "{{ certificate_directory }}/{{ purpose }}.csr"
     privatekey_path: "{{ private_key_directory }}/{{ purpose }}.key"
+    provider: selfsigned

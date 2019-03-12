@@ -1,0 +1,25 @@
+# pre-flight tasks common to other X509 modules that supplement, rather than contribute to, business logic
+
+- name: check required variables
+  assert:
+    that:
+    - purpose is defined
+
+- name: set default variables
+  set_fact:
+    certificate_directory: "{{ certificate_directory | default('/etc/ssl/certs') }}"
+    private_key_directory: "{{ private_key_directory | default('/etc/ssl/private') }}"
+
+- name: install python dependencies
+  pip:
+    name: pyopenssl
+    extra_args: --user
+
+- name: create output directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+  - "{{ certificate_directory }}"
+  - "{{ private_key_directory }}"

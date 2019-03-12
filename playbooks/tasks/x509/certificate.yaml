@@ -2,31 +2,22 @@
 # no key material is exchanged between the two boxes, only a public CSR and public certificate
 # run this on a remote server
 
-- name: check required variables
-  assert:
-    that:
-    - purpose is defined
-    - authority_cert is defined
-    - authority_key is defined
+- name: include boilerplate tasks
+  include: boilerplate.yaml
 
-- name: set default variables
+- name: set usage defaults
   set_fact:
-    certificate_directory: "{{ certificate_directory | default('/etc/ssl/certs') }}"
-    private_key_directory: "{{ private_key_directory | default('/etc/ssl/private') }}"
+    client: "{{ client | default(False) }}"
+    server: "{{ server | default(subject is defined) }}"
 
-- name: install python dependencies
-  pip:
-    name: pyopenssl
-    extra_args: --user
-
-- name: create output directories
-  file:
-    path: "{{ item }}"
-    state: directory
-    mode: 0755
-  loop:
-  - "{{ certificate_directory }}"
-  - "{{ private_key_directory }}"
+- name: set default server names
+  set_fact:
+    subject_alt_name:
+    - DNS:localhost
+    - DNS:{{ inventory_hostname }}
+    - IP:127.0.0.1
+    - IP:{{ ansible_host }}
+  when: server and subject_alt_name is not defined
 
 - name: create private key
   openssl_privatekey:
@@ -34,17 +25,20 @@
 
 - name: create signing request
   openssl_csr:
-    extended_key_usage:
-    - serverAuth
-    extended_key_usage_critical: true
-    subject_alt_name:
-    - DNS:localhost
-    - DNS:{{ inventory_hostname }}
-    - IP:127.0.0.1
-    - IP:{{ ansible_host }}
-    subject_alt_name_critical: true
     path: "{{ certificate_directory }}/{{ purpose }}.csr"
     privatekey_path: "{{ private_key_directory }}/{{ purpose }}.key"
+    subject: "{{ subject | default(omit) }}"
+    basic_constraints: CA:false
+    basic_constraints_critical: true
+    key_usage:
+    - digitalSignature
+    - nonRepudiation
+    - "{{ 'keyEncipherment' if server else omit }}"
+    key_usage_critical: true
+    extended_key_usage: "{{ [] + (['clientAuth'] if client else []) + (['serverAuth'] if server else []) }}"
+    extended_key_usage_critical: true
+    subject_alt_name: "{{ subject_alt_name | default(omit) }}"
+    subject_alt_name_critical: true
 
 - name: create local temporary directory for signing request
   run_once: true # reuse this directory throughout the play
@@ -61,11 +55,11 @@
 - name: sign request
   local_action:
     module: openssl_certificate
-    provider: ownca
     path: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ purpose }}.crt"
     csr_path: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ purpose }}.csr"
-    ownca_path: "{{ authority_cert }}"
-    ownca_privatekey_path: "{{ authority_key }}"
+    provider: ownca
+    ownca_path: "{{ authority_cert | mandatory }}"
+    ownca_privatekey_path: "{{ authority_key | mandatory }}"
 
 - name: copy certificate to host
   copy:
