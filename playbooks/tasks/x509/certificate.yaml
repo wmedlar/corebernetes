@@ -7,8 +7,8 @@
 
 - name: set usage defaults
   set_fact:
-    client: "{{ client | default(False) }}"
-    server: "{{ server | default(subject is defined) }}"
+    client: "{{ client | default(subject is defined) }}"
+    server: "{{ server | default(False) }}"
 
 - name: set default server names
   set_fact:
