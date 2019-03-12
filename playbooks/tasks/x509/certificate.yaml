@@ -1,0 +1,67 @@
+# requests a server certificate from a signing authority and generates its matching private key
+# no key material is exchanged between the two boxes, only a public CSR and public certificate
+# run this on a remote server
+
+- name: include boilerplate tasks
+  include: boilerplate.yaml
+
+- name: set usage defaults
+  set_fact:
+    client: "{{ client | default(subject is defined) }}"
+    server: "{{ server | default(False) }}"
+
+- name: set default server names
+  set_fact:
+    subject_alt_name:
+    - DNS:localhost
+    - DNS:{{ inventory_hostname }}
+    - IP:127.0.0.1
+    - IP:{{ ansible_host }}
+  when: server and subject_alt_name is not defined
+
+- name: create private key
+  openssl_privatekey:
+    path: "{{ private_key_directory }}/{{ name }}.key"
+
+- name: create signing request
+  openssl_csr:
+    path: "{{ certificate_directory }}/{{ name }}.csr"
+    privatekey_path: "{{ private_key_directory }}/{{ name }}.key"
+    subject: "{{ subject | default(omit) }}"
+    basic_constraints: CA:false
+    basic_constraints_critical: true
+    key_usage:
+    - digitalSignature
+    - nonRepudiation
+    - "{{ 'keyEncipherment' if server else omit }}"
+    key_usage_critical: true
+    extended_key_usage: "{{ [] + (['clientAuth'] if client else []) + (['serverAuth'] if server else []) }}"
+    extended_key_usage_critical: true
+    subject_alt_name: "{{ subject_alt_name | default(omit) }}"
+    subject_alt_name_critical: true
+
+- name: create local temporary directory for signing request
+  run_once: true # reuse this directory throughout the play
+  local_action:
+    module: tempfile
+    state: directory
+  register: tempdir
+
+- name: copy signing request from host
+  fetch:
+    src: "{{ certificate_directory }}/{{ name }}.csr"
+    dest: "{{ tempdir.path }}"
+
+- name: sign request
+  local_action:
+    module: openssl_certificate
+    path: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ name }}.crt"
+    csr_path: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ name }}.csr"
+    provider: ownca
+    ownca_path: "{{ authority_cert | mandatory }}"
+    ownca_privatekey_path: "{{ authority_key | mandatory }}"
+
+- name: copy certificate to host
+  copy:
+    src: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ name }}.crt"
+    dest: "{{ certificate_directory }}/{{ name }}.crt"

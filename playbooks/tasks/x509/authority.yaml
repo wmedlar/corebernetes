@@ -1,0 +1,27 @@
+# generates a self-signed certificate authority and its matching private key
+# run this on localhost
+
+- name: include boilerplate tasks
+  include: boilerplate.yaml
+
+- name: create signing key
+  openssl_privatekey:
+    path: "{{ private_key_directory }}/{{ name }}.key"
+
+- name: create self-signing request
+  openssl_csr:
+    path: "{{ certificate_directory }}/{{ name }}.csr"
+    privatekey_path: "{{ private_key_directory }}/{{ name }}.key"
+    organization_name: corebernetes
+    common_name: "{{ name }}:authority"
+    basic_constraints: CA:true
+    basic_constraints_critical: true
+    key_usage: keyCertSign, cRLSign
+    key_usage_critical: true
+
+- name: self-sign certificate authority
+  openssl_certificate:
+    path: "{{ certificate_directory }}/{{ name }}.crt"
+    csr_path: "{{ certificate_directory }}/{{ name }}.csr"
+    privatekey_path: "{{ private_key_directory }}/{{ name }}.key"
+    provider: selfsigned
