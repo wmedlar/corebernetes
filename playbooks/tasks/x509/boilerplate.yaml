@@ -3,7 +3,7 @@
 - name: check required variables
   assert:
     that:
-    - purpose is defined
+    - name is defined
 
 - name: set default variables
   set_fact:
