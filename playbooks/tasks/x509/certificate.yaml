@@ -27,13 +27,12 @@
   openssl_csr:
     path: "{{ certificate_directory }}/{{ name }}.csr"
     privatekey_path: "{{ private_key_directory }}/{{ name }}.key"
+    # most module fields are supported so we can facilitate use for client or server certificates
     subject: "{{ subject | default(omit) }}"
     basic_constraints: CA:false
     basic_constraints_critical: true
-    key_usage:
-    - digitalSignature
-    - nonRepudiation
-    - "{{ 'keyEncipherment' if server else omit }}"
+    # ansible's omit doesn't work in arrays, so this idiom allows us to selectively include items
+    key_usage: "{{ ['digitalSignature', 'nonRepudiation'] + (['keyEncipherment'] if server else []) }}"
     key_usage_critical: true
     extended_key_usage: "{{ [] + (['clientAuth'] if client else []) + (['serverAuth'] if server else []) }}"
     extended_key_usage_critical: true
