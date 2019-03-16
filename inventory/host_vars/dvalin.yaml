@@ -1,0 +1,2 @@
+coreos_target_device: /dev/sda
+coreos_release_channel: alpha

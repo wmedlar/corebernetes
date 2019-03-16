@@ -30,19 +30,21 @@
     template:
       src: templates/containerlinux.yaml.j2
       dest: containerlinux.yaml
-      validate: ./ct -in-file %s --files-dir "{{ certificate_directory }}" --files-dir "{{ private_key_directory }}" # ensure our configuration is well-formed
+      validate: ./ct -in-file %s -files-dir "{{ certificate_directory }}" -files-dir "{{ private_key_directory }}" # ensure our configuration is well-formed
 
   - name: render ignition config
-    shell: ./ct -in-file containerlinux.yaml --files-dir "{{ certificate_directory }}" --files-dir "{{ private_key_directory }}" > ignition.json
+    shell: ./ct -in-file containerlinux.yaml -files-dir "{{ certificate_directory }}" -files-dir "{{ private_key_directory }}" > ignition.json
     # don't specify creates, otherwise ansible won't run this step at all if ignition.json exists
     # meaning ansible won't pick up changes to containerlinux.yaml
     # args:
     #   creates: ignition.json
 
+  - meta: end_play
+
   # we choose raw instead of shell or command as these steps must be run outside the docker container
   - name: install coreos
     become: true
-    raw: coreos-install -d /dev/sda -i ignition.json -C beta
+    raw: coreos-install -i ignition.json -d "{{ coreos_target_device }}" -C "{{ coreos_release_channel}}"
 
   - name: reboot to coreos
     become: true
