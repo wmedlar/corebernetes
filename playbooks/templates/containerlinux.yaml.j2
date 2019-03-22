@@ -42,6 +42,9 @@ storage:
       format: ext4
       wipe_filesystem: false
 
+  # ct is invoked with --files-dir=/ to allow any arbitrary local files to be included in this block
+  # this does, however, require that these files be referenced by their absolute paths
+  # see: https://github.com/wmedlar/corebernetes/issues/8
   files:
   - filesystem: root
     path: /etc/hostname
