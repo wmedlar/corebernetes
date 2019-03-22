@@ -14,9 +14,11 @@
       cat > "/home/{{ ansible_ssh_user }}/.toolboxrc" << \EOF
       TOOLBOX_DOCKER_IMAGE=python
       TOOLBOX_DOCKER_TAG=3
-      TOOLBOX_BIND="$TOOLBOX_BIND --bind-ro=/etc/passwd:/etc/passwd --bind=/home:/home --bind=/root:/root"
       TOOLBOX_ENV=--chdir="/media/root/$PWD"
       TOOLBOX_USER="$USER"
+      TOOLBOX_BIND="$TOOLBOX_BIND --bind-ro=/etc/passwd:/etc/passwd --bind-ro=/etc/localtime:/etc/localtime"
+      TOOLBOX_BIND="$TOOLBOX_BIND --bind=/home:/home --bind=/root:/root --bind=/opt:/opt"
+      TOOLBOX_BIND="$TOOLBOX_BIND --bind="{{ corebernetes_root }}:{{ corebernetes_root }}""
 
       # if this file was invoked under a name other than "toolbox" we want to use that name as the first argument
       # this allows toolbox to be used with ansible's ansible_xxx_interpreter variables

@@ -11,6 +11,12 @@
 - hosts: corebernetes
   gather_facts: false
   tasks:
+  - raw: mkdir -p "{{ item }}" && chown -R "{{ ansible_ssh_user }}" "{{ item }}"
+    become: true
+    loop:
+    - "{{ corebernetes_root }}"
+    - /opt
+
   - include: tasks/install-python.yaml
 
 - import_playbook: certificates.yaml
