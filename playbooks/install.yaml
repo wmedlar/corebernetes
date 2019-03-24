@@ -49,8 +49,9 @@
   # we choose raw instead of shell or command as these steps must be run outside the docker container
   - name: install coreos
     become: true
-    raw: coreos-install -d /dev/sda -i ignition.json -C beta
+    raw: coreos-install -d /dev/sda -i ignition.json -C alpha
 
   - name: reboot to coreos
     become: true
+    ignore_errors: true
     raw: reboot

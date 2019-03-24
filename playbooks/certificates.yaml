@@ -19,6 +19,12 @@
         name: etcd-https
         server: true
 
+    # copy last to ensure target directory has been created by a preceding task
+    - name: copy certificate authority
+      copy:
+        src: "{{ authority_cert }}"
+        dest: "{{ certificate_directory }}"
+
   - name: provision etcd certificates
     tags: ["etcd"]
     block:
@@ -31,3 +37,8 @@
         name: etcd-peer
         client: true
         server: true
+
+    - name: copy certificate authority
+      copy:
+        src: "{{ authority_cert }}"
+        dest: "{{ certificate_directory }}"
