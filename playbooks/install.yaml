@@ -11,6 +11,13 @@
 - hosts: corebernetes
   gather_facts: false
   tasks:
+  - name: create standardized directories
+    raw: mkdir -p "{{ item }}" && chmod -R 0777 "{{ item }}"
+    become: true
+    loop:
+    - "{{ corebernetes_root }}"
+    - /opt
+
   - include: tasks/install-python.yaml
 
 - import_playbook: certificates.yaml
@@ -23,17 +30,17 @@
   - name: install ct
     get_url:
       url: "https://github.com/coreos/container-linux-config-transpiler/releases/download/{{ ct_version }}/ct-{{ ct_version }}-x86_64-unknown-linux-gnu"
-      dest: ./ct
-      mode: 0555
+      dest: /opt/bin/ct
+      mode: 0755
 
   - name: upload ct config
     template:
       src: templates/containerlinux.yaml.j2
       dest: containerlinux.yaml
-      validate: ./ct --in-file=%s --files-dir=/ # ensure our configuration is well-formed
+      validate: /opt/bin/ct --in-file=%s --files-dir=/ # ensure our configuration is well-formed
 
   - name: render ignition config
-    shell: ./ct --in-file=containerlinux.yaml --files-dir=/ > ignition.json
+    shell: /opt/bin/ct --in-file=containerlinux.yaml --files-dir=/ > ignition.json
     # don't specify creates, otherwise ansible won't run this step at all if ignition.json exists
     # meaning ansible won't pick up changes to containerlinux.yaml
     # args:
