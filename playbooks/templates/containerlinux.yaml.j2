@@ -112,7 +112,10 @@ systemd:
     - name: 10-etcd-pki-mount.conf
       contents: |
         [Service]
-        Environment=RKT_RUN_ARGS="--volume pki,kind=host,source=/etc/corebernetes/pki,readOnly=true --mount volume=pki,target=/etc/corebernetes/pki"
+        Environment=RKT_RUN_ARGS="--volume corebernetes-certs,kind=host,source={{ certificate_directory }},readOnly=true \
+        --volume corebernetes-keys,kind=host,source={{ private_key_directory }},readOnly=true \
+        --mount volume=corebernetes-certs,target={{ certificate_directory }} \
+        --mount volume=corebernetes-keys,target={{ private_key_directory }}"
 
   - name: mnt-storage0.mount
     enabled: true
