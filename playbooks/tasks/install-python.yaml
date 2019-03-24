@@ -50,7 +50,6 @@
   raw: ln -fs "/var/lib/toolbox/{{ ansible_ssh_user }}-python-3" /var/lib/toolbox/root-python-3
 
 - name: create binary directory
-  become: true
   raw: mkdir -p "{{ ansible_python_interpreter | dirname }}"
 
 - name: link python to toolbox
