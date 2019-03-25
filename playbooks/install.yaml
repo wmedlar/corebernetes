@@ -10,15 +10,8 @@
 
 - hosts: corebernetes
   gather_facts: false
-  tasks:
-  - name: create standardized directories
-    raw: mkdir -p "{{ item }}" && chmod -R 0777 "{{ item }}"
-    become: true
-    loop:
-    - "{{ corebernetes_root }}"
-    - /opt
-
-  - include: tasks/install-python.yaml
+  roles:
+  - toolbox
 
 - import_playbook: certificates.yaml
 
