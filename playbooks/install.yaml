@@ -17,34 +17,5 @@
 
 - hosts: corebernetes
   gather_facts: false
-  vars:
-    ct_version: v0.9.0
-  tasks:
-  - name: install ct
-    get_url:
-      url: "https://github.com/coreos/container-linux-config-transpiler/releases/download/{{ ct_version }}/ct-{{ ct_version }}-x86_64-unknown-linux-gnu"
-      dest: /opt/bin/ct
-      mode: 0755
-
-  - name: upload ct config
-    template:
-      src: templates/containerlinux.yaml.j2
-      dest: containerlinux.yaml
-      validate: /opt/bin/ct --in-file=%s --files-dir=/ # ensure our configuration is well-formed
-
-  - name: render ignition config
-    shell: /opt/bin/ct --in-file=containerlinux.yaml --files-dir=/ > ignition.json
-    # don't specify creates, otherwise ansible won't run this step at all if ignition.json exists
-    # meaning ansible won't pick up changes to containerlinux.yaml
-    # args:
-    #   creates: ignition.json
-
-  # we choose raw instead of shell or command as these steps must be run outside the docker container
-  - name: install coreos
-    become: true
-    raw: coreos-install -d /dev/sda -i ignition.json -C alpha
-
-  - name: reboot to coreos
-    become: true
-    ignore_errors: true
-    raw: reboot
+  roles:
+  - coreos

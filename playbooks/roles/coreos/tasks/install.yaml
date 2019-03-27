@@ -1,0 +1,18 @@
+- name: ensure coreos_target_device is set
+  assert:
+    that: coreos_target_device is defined
+    msg: coreos_target_device must be defined, there is no default for this setting
+
+# we choose raw instead of shell or command as these steps must be run outside the docker container
+- name: install coreos
+  become: true
+  raw: >
+    coreos-install
+    -i /etc/corebernetes/ignition.json
+    -d "{{ coreos_target_device }}"
+    -C "{{ coreos_release_channel }}"
+
+- name: reboot to coreos
+  become: true
+  raw: reboot
+  ignore_errors: true

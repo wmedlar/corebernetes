@@ -1,0 +1,23 @@
+# generates an ignition.json from the included container linux config template
+
+- name: install ct
+  get_url:
+    url: "https://github.com/coreos/container-linux-config-transpiler/releases/download/{{ coreos_ct_version }}/ct-{{ coreos_ct_version }}-x86_64-unknown-linux-gnu"
+    dest: /opt/bin/ct
+    mode: 0755
+
+- name: render container linux config
+  template:
+    src: containerlinux.yaml.j2
+    dest: /etc/corebernetes/containerlinux.yaml
+    validate: /opt/bin/ct --files-dir=/ --in-file=%s # ensure our configuration is well-formed
+
+- name: render ignition config
+  shell: >
+    /opt/bin/ct --files-dir=/
+    --in-file=/etc/corebernetes/containerlinux.yaml
+    --out-file=/etc/corebernetes/ignition.json
+  # don't specify creates, otherwise ansible won't run this step at all if ignition.json exists
+  # meaning ansible won't pick up changes to containerlinux.yaml if run multiple times on a host
+  # args:
+  #   creates: /etc/corebernetes/ignition.json
