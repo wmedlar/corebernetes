@@ -3,7 +3,7 @@
     that: coreos_target_device is defined
     msg: coreos_target_device must be defined, there is no default for this setting
 
-# we choose raw instead of shell or command as these steps must be run outside the docker container
+# we choose raw instead of shell or command as these steps must be run outside the toolbox container
 - name: install coreos
   become: true
   raw: >
@@ -12,7 +12,8 @@
     -d "{{ coreos_target_device }}"
     -C "{{ coreos_release_channel }}"
 
+# reboot runs outside of the toolbox container, not actually requiring python
+# this module improves on "raw: reboot" by establishing a connection after the host boots
 - name: reboot to coreos
   become: true
-  raw: reboot
-  ignore_errors: true
+  reboot: {}
