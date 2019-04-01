@@ -1,0 +1,49 @@
+- name: create local certificate authorities
+  run_once: true # run only once per loop item per play, not for every host
+  include_tasks:
+    file: root.yaml
+    apply:
+      # include_* silently ignores a top-level delegate_to, instead it must be "applied"
+      # https://github.com/ansible/ansible/issues/37995#issuecomment-376573959
+      delegate_to: localhost
+  vars:
+    certificate_authority_name: "{{ item }}"
+    # tasks used with delegate_to use the variables of the target host and not the delegated host
+    # we must override these parameters manually with localhost's corresponding values
+    certificate_directory: "{{ localhost_certificate_directory }}"
+  loop: &components
+  - etcd
+  - http
+
+- name: copy certificate authority
+  copy:
+    src: "{{ localhost_certificate_directory }}/{{ item }}/ca.crt"
+    dest: "{{ certificate_directory }}/{{ item }}/"
+  loop: *components
+
+- name: install python dependencies
+  pip:
+    name: pyopenssl
+    extra_args: --user
+
+- name: create etcd certificate for client
+  include: leaf.yaml
+  vars:
+    certificate_authority_name: etcd
+    certificate_file_name: client
+    certificate_client_authentication: true
+
+- name: create etcd certificate for peer
+  include: leaf.yaml
+  vars:
+    certificate_authority_name: etcd
+    certificate_file_name: peer
+    certificate_client_authentication: true
+    certificate_server_authentication: true
+
+- name: create http certificate for etcd
+  include: leaf.yaml
+  vars:
+    certificate_authority_name: http
+    certificate_file_name: etcd
+    certificate_server_authentication: true

@@ -1,3 +1,2 @@
 # if using docker-compose recall that these are paths in the container, not the host
 certificate_directory: /etc/corebernetes/generated
-private_key_directory: /etc/corebernetes/generated

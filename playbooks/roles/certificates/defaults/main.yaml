@@ -1,0 +1,21 @@
+# certificates are stored in subdirectories of this according to their authorities
+# e.g., an etcd client certificate would be at "{{ certificate_directory }}/etcd/client.crt"
+certificate_directory: /etc/corebernetes/certs
+
+# these control requested key usages (i.e., client/server auth)
+# and whether subject (for client) or SAN (for server) fields are included
+certificate_client_authentication: false
+certificate_server_authentication: false
+
+# map subject claims, only meaningful for client certificates
+certificate_subject: {}
+
+# DNS names and IPs this certificate will cover, only meaningful for server certificates
+certificate_subject_alt_names:
+- DNS:localhost
+- DNS:{{ inventory_hostname }}
+- IP:127.0.0.1
+- IP:{{ ansible_host }}
+
+# workaround for a delegate_to using the target host's vars instead of the delegated host's, see tasks/main.yaml
+localhost_certificate_directory: "{{ hostvars.localhost.certificate_directory | default('/etc/corebernetes/certs') }}"

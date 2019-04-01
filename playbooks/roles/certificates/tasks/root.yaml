@@ -1,0 +1,28 @@
+# create a root (authority) certificate with which to sign and provision client and server certificates
+
+- name: create certificate directory
+  file:
+    path: "{{ certificate_directory }}/{{ certificate_authority_name }}"
+    state: directory
+
+- name: create signing key
+  openssl_privatekey:
+    path: "{{ certificate_directory }}/{{ certificate_authority_name }}/ca.key"
+
+- name: create self-signing request
+  openssl_csr:
+    path: "{{ certificate_directory }}/{{ certificate_authority_name }}/ca.csr"
+    privatekey_path: "{{ certificate_directory }}/{{ certificate_authority_name }}/ca.key"
+    organization_name: corebernetes
+    common_name: "{{ certificate_authority_name }}:authority"
+    basic_constraints: CA:true
+    basic_constraints_critical: true
+    key_usage: ["keyCertSign", "cRLSign"]
+    key_usage_critical: true
+
+- name: self-sign certificate authority
+  openssl_certificate:
+    path: "{{ certificate_directory }}/{{ certificate_authority_name }}/ca.crt"
+    csr_path: "{{ certificate_directory }}/{{ certificate_authority_name }}/ca.csr"
+    privatekey_path: "{{ certificate_directory }}/{{ certificate_authority_name }}/ca.key"
+    provider: selfsigned

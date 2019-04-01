@@ -1,21 +1,6 @@
-- hosts: localhost
-  gather_facts: false
-  tasks:
-  - include: tasks/x509/authority.yaml
-    loop:
-    - http
-    - etcd
-    loop_control:
-      loop_var: name
-
 - hosts: corebernetes
   gather_facts: false
   roles:
   - toolbox
-
-- import_playbook: certificates.yaml
-
-- hosts: corebernetes
-  gather_facts: false
-  roles:
+  - certificates
   - coreos
