@@ -31,7 +31,6 @@
     subject_alt_name_critical: true
 
 - name: create local temporary directory for signing request
-  run_once: true # reuse this directory throughout the play
   local_action:
     module: tempfile
     state: directory
