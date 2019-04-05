@@ -1,0 +1,56 @@
+storage:
+  disks:
+  - device: /dev/sdb
+    wipe_table: true
+    partitions:
+    - label: STORAGE0
+      type_guid: linux_filesystem_data
+
+  - device: /dev/sdc
+    wipe_table: true
+    partitions:
+    - label: STORAGE1
+      type_guid: linux_filesystem_data
+
+  filesystems:
+  - name: storage0
+    mount:
+      device: /dev/disk/by-partlabel/STORAGE0
+      format: ext4
+      wipe_filesystem: false
+
+  - name: storage1
+    mount:
+      device: /dev/disk/by-partlabel/STORAGE1
+      format: ext4
+      wipe_filesystem: false
+
+systemd:
+  units:
+  - name: mnt-storage0.mount
+    enabled: true
+    contents: |
+      [Unit]
+      Description=Mount storage drive to /mnt/storage0
+      Before=local-fs.target
+      [Mount]
+      What=/dev/disk/by-partlabel/STORAGE0
+      Where=/mnt/storage0
+      Type=ext4
+      Options=defaults,discard,noatime
+      [Install]
+      WantedBy=local-fs.target
+
+  - name: mnt-storage1.mount
+    enabled: true
+    contents: |
+      [Unit]
+      Description=Mount storage drive to /mnt/storage1
+      Before=local-fs.target
+      [Mount]
+      What=/dev/disk/by-partlabel/STORAGE1
+      Where=/mnt/storage1
+      Type=ext4
+      Options=defaults
+      [Install]
+      WantedBy=local-fs.target

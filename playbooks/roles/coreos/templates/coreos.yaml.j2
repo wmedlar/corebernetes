@@ -1,0 +1,34 @@
+# miscellaneous, but important, configuration
+passwd:
+  users:
+  - name: core
+    ssh_authorized_keys:
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDJ9tGB0fNOJTeOo5wGXkic6DesU7F0YcdDEFLW/OcWGRMh9IBHFjOwgH+mObZ7WazNPAja2/dZsCZevw1GitDCpLVoy3UF/zoVrDDmdT4JaYoGzFSOIXxtjAMDUYZYLnAIvqgLAlXdEK51Q9anBlawND7HinFacuKdH0Y+/SlL0o+QIWZXio18xm/2S3WbSxjUSpHBjF6PINQEO1OOUnQSxUY157QqDJVdJfz/eQaWbq8sYqpKMObNoUR0yL7GaW0kKTEFQ8IPUBSdodzwY3M4+6oWbWE30ApuFaATpL7qRX1OO8lL9AlW1NUU9w+3exeG7GNqNusNIC4tQEZfM64UVyp0uYpdRitJUYDKzuPs6DYAD6ez4zNVVUQvFPEoOw1ux7X3SZMdUTkN7U/UZuD0L1dpONe4KsFOuLSaHn4mDItTdHxKLuZoeMOEJs+dkTi8OoW0ZcjsyxAUBxtmKtK14I70FgFVqTfqkCbXqjBZj6OqMvGT6f06Cgp3LIDx6whW6mSxX64FyNVfzUuZzI9D/kGFmLl0fWn5LwF8alKkL+Iws+EOZi9uobvG/CVGR2w//9Op/2Yzd0DxKwlqPLZLrhn3P907oHrUVqbP9LYkte82nvwO/DZkO5gQCvh+cik5YlbHRByLN4cuBXlBEnjqZvX69aA4d0+gLfAegmwkzw==
+
+storage:
+  disks:
+  # this is the disk we install coreos to (the -d argument); this block has no effect, the partition table will already
+  # be in the desired state when ignition is run, it is simply included for completeness
+  - device: "{{ coreos_target_device }}"
+    wipe_table: false
+
+  filesystems:
+  - name: root
+    mount:
+      device: /dev/disk/by-partlabel/ROOT
+      format: ext4
+      wipe_filesystem: false
+
+  # ct is invoked with --files-dir=/ to allow any arbitrary local files to be included in this block
+  # this does, however, require that these files be referenced by their absolute paths
+  # see: https://github.com/wmedlar/corebernetes/issues/8
+  files:
+  - filesystem: root
+    path: /etc/hostname
+    contents:
+      inline: "{{ inventory_hostname }}"
+
+systemd:
+  units:
+  - name: docker.service
+    enabled: true
