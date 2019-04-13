@@ -1,3 +1,16 @@
-coreos_ct_version: v0.9.0
+# target version of the container linux config transpiler to install
+# https://github.com/coreos/container-linux-config-transpiler/releases
+ct_version: v0.9.0
+
+coreos_config_file: "{{ global_corebernetes_directory }}/containerlinux.yaml"
+
+coreos_fragments_directory: "{{ global_corebernetes_directory }}/fragments"
+
+coreos_fragments_from: []
+
+# coreos release group to install from, choose from: [stable, beta, alpha]
+# https://coreos.com/releases/
 coreos_release_channel: stable
+
+# device (not partition) to install coreos to
 # coreos_target_device: /dev/sdX
