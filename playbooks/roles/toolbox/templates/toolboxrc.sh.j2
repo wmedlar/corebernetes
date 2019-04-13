@@ -1,0 +1,33 @@
+TOOLBOX_DOCKER_IMAGE="{{ toolbox_docker_image }}"
+TOOLBOX_DOCKER_TAG="{{ toolbox_docker_tag }}"
+
+# preserve $USER by transparently passing the current user to systemd-nspawn's --user flag
+# https://github.com/coreos/toolbox/blob/586dcee184afe5f9d4a5b27478132e7b0f7d1173/toolbox#L82
+TOOLBOX_USER="$USER"
+
+# preserve $PWD by changing into directory mount prior to the executing container process
+# we abuse TOOLBOX_ENV here as there is no other parameter we can use to pass in arbitrary flags
+TOOLBOX_ENV="$TOOLBOX_ENV --chdir="/media/root/$PWD""
+
+# preserve id mappings by mounting /etc/passwd (uid) and /etc/group (gid) as read-only
+TOOLBOX_BIND="$TOOLBOX_BIND --bind-ro=/etc/passwd:/etc/passwd --bind-ro=/etc/group:/etc/group"
+# preserve timezone information
+TOOLBOX_BIND="$TOOLBOX_BIND --bind-ro=/etc/localtime:/etc/localtime"
+# preserve $HOME by mounting in root and normal users' home directories
+TOOLBOX_BIND="$TOOLBOX_BIND --bind=/home:/home --bind=/root:/root"
+# preserve absolute paths used across the corebernetes project
+TOOLBOX_BIND="$TOOLBOX_BIND --bind=/etc/corebernetes:/etc/corebernetes --bind=/opt:/opt"
+
+# if this file was invoked under a name other than "toolbox" we want to use that name as the first argument
+# this allows toolbox to be used with ansible's ansible_xxx_interpreter variables
+# https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#ansible-python-interpreter
+binary_name="$(basename "$0")"
+
+if [ "$binary_name" != toolbox ]; then
+    # less recent versions (< v240) of systemd-nspawn use the host's $PATH instead of the container's to invoke
+    # the given command, and since the python docker image ships with several binaries across several versions in
+    # several places we're better off just being specific about which we want
+    # https://github.com/systemd/systemd/issues/10377
+    # https://github.com/docker-library/python/issues/345
+    set -- "/usr/local/bin/$binary_name" "$@"
+fi

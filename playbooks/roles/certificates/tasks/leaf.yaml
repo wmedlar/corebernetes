@@ -1,0 +1,56 @@
+# create a leaf (end-entity) certificate, supports both client and server certificates
+
+- name: create certificate directory
+  file:
+    path: "{{ certificate_directory }}/{{ certificate_authority_name }}"
+    state: directory
+
+- name: create private key
+  openssl_privatekey:
+    path: "{{ certificate_directory }}/{{ certificate_authority_name }}/{{ certificate_file_name }}.key"
+
+- name: create signing request
+  openssl_csr:
+    path: "{{ certificate_directory }}/{{ certificate_authority_name }}/{{ certificate_file_name }}.csr"
+    privatekey_path: "{{ certificate_directory }}/{{ certificate_authority_name }}/{{ certificate_file_name }}.key"
+    basic_constraints: CA:false
+
+    # ansible's omit doesn't work in arrays, so this idiom allows us to selectively include items
+    extended_key_usage: >
+      {{ [] +
+      (["clientAuth"] if certificate_client_authentication else []) +
+      (["serverAuth"] if certificate_server_authentication else []) }}
+    extended_key_usage_critical: true
+    key_usage: >
+      {{ ["digitalSignature", "nonRepudiation"] +
+      (["keyEncipherment"] if certificate_server_authentication else []) }}
+    key_usage_critical: true
+
+    subject: "{{ certificate_subject if certificate_client_authentication else omit }}"
+    subject_alt_name: "{{ certificate_subject_alt_names if certificate_server_authentication else omit }}"
+    subject_alt_name_critical: true
+
+- name: create local temporary directory for signing request
+  local_action:
+    module: tempfile
+    state: directory
+  register: tempdir
+
+- name: copy signing request from host
+  fetch:
+    src: "{{ certificate_directory }}/{{ certificate_authority_name }}/{{ certificate_file_name }}.csr"
+    dest: "{{ tempdir.path }}/"
+
+- name: sign request
+  local_action:
+    module: openssl_certificate
+    path: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ certificate_authority_name }}/{{ certificate_file_name }}.crt"
+    csr_path: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ certificate_authority_name }}/{{ certificate_file_name }}.csr"
+    provider: ownca
+    ownca_path: "{{ localhost_certificate_directory }}/{{ certificate_authority_name }}/ca.crt"
+    ownca_privatekey_path: "{{ localhost_certificate_directory }}/{{ certificate_authority_name }}/ca.key"
+
+- name: copy certificate to host
+  copy:
+    src: "{{ tempdir.path }}/{{ inventory_hostname }}/{{ certificate_directory }}/{{ certificate_authority_name }}/{{ certificate_file_name }}.crt"
+    dest: "{{ certificate_directory }}/{{ certificate_authority_name }}/"

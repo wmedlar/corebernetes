@@ -1,0 +1,62 @@
+# coreos' toolbox allows us to inject our own tooling via a container filesystem and systemd-nspawn
+# we configure toolbox to run a python container, then configure ansible to use this for its modules
+# https://github.com/coreos/toolbox
+
+# contains configuration files (e.g., pki, manifests) and thus should be owned by the non-root user
+- name: create /etc/corebernetes
+  become: true
+  raw: install -d -o "{{ ansible_ssh_user }}" -g "{{ ansible_ssh_user }}" /etc/corebernetes
+
+# /opt contains programs and binaries and thus should be at least world-readable
+# conveniently /opt/bin is already on our $PATH
+- name: create /opt/bin
+  become: true
+  raw: install -d -m 0777 /opt/bin
+
+# enforce our standards by preventing binaries from being installed outside /opt/bin
+# this also has the side-effect of reminding us to set our interpreter path in the inventory for subsequent steps
+- name: ensure ansible_python_interpreter is properly configured
+  assert:
+    that: (ansible_python_interpreter | dirname) == '/opt/bin'
+    msg: ansible_python_interpreter must be in /opt/bin, no other directory is supported
+
+# global toolbox configuration is read from /etc/default/toolbox, with per-user overrides allowed in ~/.toolboxrc
+# https://github.com/coreos/toolbox/blob/586dcee184afe5f9d4a5b27478132e7b0f7d1173/toolbox#L30-L38
+- name: install global toolbox configuration
+  become: true
+  # ansible prepends spaces in front of multiline raw commands, breaking heredocs
+  # one workaround for this is to assign the command to a variable as we've done here
+  # https://github.com/ansible/ansible/issues/12034#issuecomment-453723192
+  raw: "{{ command }}"
+  vars:
+    # escaping or quoting the "limit string" in a heredoc disables parameter substitution
+    # http://tldp.org/LDP/abs/html/here-docs.html#EX71C
+    command: |
+      cat > /etc/default/toolbox << \EOF
+      {{ lookup('template', 'toolboxrc.sh.j2') }}
+      EOF
+
+# the first run of toolbox will pull and unpack the docker image to the local filesystem
+# this can take a while so we'll pull it eagerly to avoid confusion or timeouts in subsequent steps
+- name: verify toolbox container
+  become: true
+  raw: /usr/bin/toolbox echo hello world
+
+# toolbox unpacks the container filesystem to a directory containing the invoking user's name
+# since we want to reuse the same container for the non-root user we simply have to symlink it
+- name: expose toolbox container for non-privileged users
+  become: true
+  raw: >
+    ln -fs
+    "/var/lib/toolbox/root-{{ toolbox_docker_image }}-{{ toolbox_docker_tag }}"
+    "/var/lib/toolbox/{{ ansible_ssh_user }}-{{ toolbox_docker_image }}-{{ toolbox_docker_tag }}"
+
+# when invoked as "python" toolbox will act accordingly, see templates/toolboxrc.sh.j2
+- name: link python to toolbox
+  become: true
+  raw: ln -fs /usr/bin/toolbox "{{ ansible_python_interpreter }}"
+
+# collect a small subset of remote host metadata to verify python is working correctly
+- name: verify python installation
+  setup:
+    gather_subset: min

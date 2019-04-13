@@ -1,0 +1,2 @@
+coreos_release_channel: beta
+coreos_target_device: /dev/sda

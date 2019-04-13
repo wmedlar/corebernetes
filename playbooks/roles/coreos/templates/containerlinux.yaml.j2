@@ -12,7 +12,7 @@ etcd:
   listen_metrics_urls: http://0.0.0.0:2381
 
   cert_file: "{{ certificate_directory }}/etcd-https.crt"
-  key_file: "{{ private_key_directory }}/etcd-https.key"
+  key_file: "{{ certificate_directory }}/etcd-https.key"
 
   client_cert_auth: true
   trusted_ca_file: "{{ certificate_directory }}/etcd.crt"
@@ -20,7 +20,7 @@ etcd:
   peer_client_cert_auth: true
   peer_trusted_ca_file: "{{ certificate_directory }}/etcd.crt"
   peer_cert_file: "{{ certificate_directory }}/etcd-peer.crt"
-  peer_key_file: "{{ private_key_directory }}/etcd-peer.key"
+  peer_key_file: "{{ certificate_directory }}/etcd-peer.key"
 
 passwd:
   users:
@@ -92,9 +92,9 @@ storage:
       local: "{{ certificate_directory }}/etcd-{{ item }}.crt"
 
   - filesystem: root
-    path: "{{ private_key_directory }}/etcd-{{ item }}.key"
+    path: "{{ certificate_directory }}/etcd-{{ item }}.key"
     contents:
-      local: "{{ private_key_directory }}/etcd-{{ item }}.key"
+      local: "{{ certificate_directory }}/etcd-{{ item }}.key"
     mode: 0400
     user:
       name: etcd
@@ -113,9 +113,7 @@ systemd:
       contents: |
         [Service]
         Environment=RKT_RUN_ARGS="--volume corebernetes-certs,kind=host,source={{ certificate_directory }},readOnly=true \
-        --volume corebernetes-keys,kind=host,source={{ private_key_directory }},readOnly=true \
-        --mount volume=corebernetes-certs,target={{ certificate_directory }} \
-        --mount volume=corebernetes-keys,target={{ private_key_directory }}"
+        --mount volume=corebernetes-certs,target={{ certificate_directory }}"
 
   - name: mnt-storage0.mount
     enabled: true

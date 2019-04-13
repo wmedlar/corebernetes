@@ -1,6 +1,2 @@
 ansible_ssh_user: core
 ansible_python_interpreter: /opt/bin/python
-
-corebernetes_root: /etc/corebernetes
-certificate_directory: "{{ corebernetes_root }}/pki/certs"
-private_key_directory: "{{ corebernetes_root }}/pki/keys"
