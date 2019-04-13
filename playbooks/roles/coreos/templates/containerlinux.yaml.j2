@@ -113,9 +113,7 @@ systemd:
       contents: |
         [Service]
         Environment=RKT_RUN_ARGS="--volume corebernetes-certs,kind=host,source={{ certificate_directory }},readOnly=true \
-        --volume corebernetes-keys,kind=host,source={{ certificate_directory }},readOnly=true \
-        --mount volume=corebernetes-certs,target={{ certificate_directory }} \
-        --mount volume=corebernetes-keys,target={{ certificate_directory }}"
+        --mount volume=corebernetes-certs,target={{ certificate_directory }}"
 
   - name: mnt-storage0.mount
     enabled: true
