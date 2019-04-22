@@ -36,6 +36,11 @@
 - name: merge fragments
   when: fragments.matched > 1
   block:
+  - name: create /opt/bin
+    file:
+      path: /opt/bin
+      state: directory
+
   - name: install yq
     get_url:
       url: https://github.com/mikefarah/yq/releases/download/{{ yq_version }}/yq_linux_amd64

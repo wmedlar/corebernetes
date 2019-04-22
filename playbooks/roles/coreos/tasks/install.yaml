@@ -5,7 +5,7 @@
 
 - name: install container linux config transpiler
   get_url:
-    url: "https://github.com/coreos/container-linux-config-transpiler/releases/download/{{ ct_version }}/ct-{{ ct_version }}-x86_64-unknown-linux-gnu"
+    url: "https://github.com/coreos/container-linux-config-transpiler/releases/download/v{{ ct_version }}/ct-v{{ ct_version }}-x86_64-unknown-linux-gnu"
     dest: /opt/bin/ct
     mode: 0755
 

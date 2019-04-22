@@ -1,6 +1,10 @@
 # target version of the container linux config transpiler to install
 # https://github.com/coreos/container-linux-config-transpiler/releases
-ct_version: v0.9.0
+ct_version: 0.9.0 # no leading "v"
+
+# target version of yq utility to use to combine container linux fragments
+# https://github.com/mikefarah/yq/releases
+yq_version: 2.3.0
 
 coreos_config_file: "{{ global_corebernetes_directory }}/containerlinux.yaml"
 
