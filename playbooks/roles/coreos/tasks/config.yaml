@@ -54,5 +54,5 @@
       # creates: /etc/corebernetes/containerlinux.yaml
     shell: >
       /opt/bin/yq merge --append
-      {{ fragments.files | map(attribute='path') | join }}
+      {{ fragments.files | map(attribute='path') | join(' ') }}
       > {{ coreos_config_file }}
