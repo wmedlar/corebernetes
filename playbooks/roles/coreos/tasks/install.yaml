@@ -5,7 +5,7 @@
 
 - name: install container linux config transpiler
   get_url:
-    url: "https://github.com/coreos/container-linux-config-transpiler/releases/download/v{{ ct_version }}/ct-v{{ ct_version }}-x86_64-unknown-linux-gnu"
+    url: https://github.com/coreos/container-linux-config-transpiler/releases/download/v{{ ct_version }}/ct-v{{ ct_version }}-x86_64-unknown-linux-gnu
     dest: /opt/bin/ct
     mode: 0755
 
@@ -15,8 +15,9 @@
   # args:
   #   creates: /etc/corebernetes/ignition.json
   shell: >
-    /opt/bin/ct --files-dir=/
-    --in-file={{ coreos_config_file }}
+    /opt/bin/ct
+    --files-dir=/
+    --in-file="{{ coreos_config_file }}"
     --out-file=/etc/corebernetes/ignition.json
 
 # we choose raw instead of shell or command as these steps must be run outside the toolbox container
@@ -24,9 +25,9 @@
   become: true
   raw: >
     coreos-install
-    -i /etc/corebernetes/ignition.json
-    -d "{{ coreos_target_device }}"
-    -C "{{ coreos_release_channel }}"
+    -i=/etc/corebernetes/ignition.json
+    -d="{{ coreos_target_device }}"
+    -C="{{ coreos_release_channel }}"
 
 # reboot runs outside of the toolbox container, not actually requiring python
 # this module improves on "raw: reboot" by establishing a connection after the host boots
