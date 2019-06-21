@@ -1,23 +1,58 @@
-# generates an ignition.json from the included container linux config template
+# deleting and recreating a directory is the standard ansible idiom for emptying out a directory
+# since we'll be globbing for files later on we want to ensure that no unintended files make it in
+- name: create directory for config fragments
+  file:
+    path: "{{ coreos_fragments_directory }}"
+    state: "{{ item }}"
+  loop:
+  - absent
+  - directory
 
-- name: install ct
-  get_url:
-    url: "https://github.com/coreos/container-linux-config-transpiler/releases/download/{{ coreos_ct_version }}/ct-{{ coreos_ct_version }}-x86_64-unknown-linux-gnu"
-    dest: /opt/bin/ct
-    mode: 0755
+- name: render internal config fragment
+  include_role:
+    name: "{{ role_name }}"
+    tasks_from: fragment
 
-- name: render container linux config
-  template:
-    src: containerlinux.yaml.j2
-    dest: /etc/corebernetes/containerlinux.yaml
-    validate: /opt/bin/ct --files-dir=/ --in-file=%s # ensure our configuration is well-formed
+- name: render external config fragments
+  include_role:
+    name: "{{ item }}"
+    tasks_from: fragment
+  loop: "{{ coreos_fragments_from }}"
 
-- name: render ignition config
-  shell: >
-    /opt/bin/ct --files-dir=/
-    --in-file=/etc/corebernetes/containerlinux.yaml
-    --out-file=/etc/corebernetes/ignition.json
-  # don't specify creates, otherwise ansible won't run this step at all if ignition.json exists
-  # meaning ansible won't pick up changes to containerlinux.yaml if run multiple times on a host
-  # args:
-  #   creates: /etc/corebernetes/ignition.json
+# if we only have a single file we can skip the overhead of merging the fragments together
+- name: list all fragments
+  find:
+    path: "{{ coreos_fragments_directory }}"
+    patterns: ["*.yml", "*.yaml"]
+  register: fragments
+
+- name: use single fragment
+  when: fragments.matched == 1
+  copy:
+    remote_src: true
+    src: "{{ fragments.files[0].path }}"
+    dest: "{{ coreos_config_file }}"
+
+- name: merge fragments
+  when: fragments.matched > 1
+  block:
+  - name: create /opt/bin
+    file:
+      path: /opt/bin
+      state: directory
+
+  - name: install yq
+    get_url:
+      url: https://github.com/mikefarah/yq/releases/download/{{ yq_version }}/yq_linux_amd64
+      dest: /opt/bin/yq
+      mode: 0755
+
+  - name: combine config fragments
+    args:
+      # don't specify creates, otherwise ansible won't run this step at all if containerlinux.yaml exists
+      # meaning ansible won't pick up changes to our fragments if this is run multiple times on a host
+      # creates: /etc/corebernetes/containerlinux.yaml
+    shell: >
+      /opt/bin/yq merge --append
+      {{ fragments.files | map(attribute='path') | join(' ') }}
+      > {{ coreos_config_file }}

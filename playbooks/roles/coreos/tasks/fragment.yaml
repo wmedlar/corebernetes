@@ -1,0 +1,4 @@
+- name: render container linux fragment
+  template:
+    src: containerlinux.yaml.j2
+    dest: "{{ coreos_fragments_directory }}/{{ role_name }}.yaml"

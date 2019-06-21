@@ -1,6 +1,24 @@
 - hosts: corebernetes
   gather_facts: false
   tasks:
-  - name: render container linux template
+  - name: create temporary directory for fragments
+    local_action:
+      module: tempfile
+      state: directory
+    register: tempdir
+
+  - name: create local containerlinux.yaml
+    include_role:
+      name: coreos
+      tasks_from: config
+      apply:
+        delegate_to: localhost
+    vars:
+      coreos_config_file: "{{ tempdir.path }}/containerlinux.yaml"
+      coreos_fragments_directory: "{{ tempdir.path }}/fragments"
+
+  - name: read local containerlinux.yaml
     debug:
-      msg: "{{ lookup('template', 'containerlinux.yaml.j2') }}"
+      msg: "{{ lookup('file', filename) }}"
+    vars:
+      filename: "{{ '%s/containerlinux.yaml' | format(tempdir.path) }}"
